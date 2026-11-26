@@ -1194,7 +1194,7 @@ input,select,textarea{background:#fff!important;color:#1e293b!important;border-c
 .btn-blue,.btn-add{background:linear-gradient(135deg,#2563eb,#0891b2)!important;color:#fff!important;box-shadow:0 5px 14px rgba(37,99,235,.18)!important}
 .badge.active,.online-user{background:#ecfdf5!important;color:#047857!important;border-color:#a7f3d0!important}
 
-</style>
+body.theme-dark{background:#09090d!important;color:#f4f4f5!important}body.theme-dark .sidebar{background:#101015!important;border-color:#29232a!important}body.theme-dark .brand-name,body.theme-dark .page-title h1,body.theme-dark .nav-text b,body.theme-dark .developer-box strong{color:#fff!important}body.theme-dark .nav-item,body.theme-dark .card,body.theme-dark .stat-card,body.theme-dark .panel,body.theme-dark .developer-box{background:#15151b!important;color:#f4f4f5!important;border-color:#30232a!important}body.theme-dark .nav-item:hover,body.theme-dark .nav-item.active{background:#291218!important;color:#ff5364!important;border-color:#7f1d2d!important}body.theme-dark .nav-item:before{background:linear-gradient(180deg,#ef233c,#8b0000)!important}body.theme-dark .nav-icon,body.theme-dark .language-btn{background:#271218!important;border-color:#70202e!important;color:#ff5364!important}body.theme-dark .btn-blue,body.theme-dark .btn-add{background:linear-gradient(135deg,#ef233c,#990018)!important}</style>
 </head>
 
 <body>
@@ -1319,6 +1319,8 @@ input,select,textarea{background:#fff!important;color:#1e293b!important;border-c
         </a>
 
 
+        <a href="/bots" class="nav-item" onclick="closeSidebar()"><span class="nav-icon">🤖</span><span class="nav-text"><b>ربات‌ساز X7</b><small>ساخت ربات فروش VPN</small></span><span class="nav-arrow">›</span></a>
+
         <!-- =========================================
              PANEL SETTINGS — REDESIGNED
              ========================================= -->
@@ -1370,116 +1372,7 @@ input,select,textarea{background:#fff!important;color:#1e293b!important;border-c
         </a>
 
 
-        <div class="nav-title" style="margin-top:16px;">
-
-            <span class="tic">✦</span>
-
-            <span data-i18n="community">
-                COMMUNITY
-            </span>
-
-        </div>
-
-
-        <!-- TELEGRAM -->
-
-        <a
-            href="https://t.me/AlisanX17"
-            target="_blank"
-            class="nav-item"
-            onclick="closeSidebar()"
-        >
-
-            <span class="nav-icon">
-
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     width="21"
-                     height="21"
-                     viewBox="0 0 24 24"
-                     fill="none"
-                     stroke="currentColor"
-                     stroke-width="1.8"
-                     stroke-linecap="round"
-                     stroke-linejoin="round">
-
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-
-                </svg>
-
-            </span>
-
-            <span class="nav-text">
-
-                <b data-i18n="joinTelegram">
-                    Join Telegram
-                </b>
-
-                <small data-i18n="joinTelegramSub">
-                    News &amp; updates
-                </small>
-
-            </span>
-
-            <span class="nav-arrow">›</span>
-
-        </a>
-
-
-        <!-- SUPPORT -->
-
-        <a
-            href="https://t.me/poll_o0"
-            target="_blank"
-            class="nav-item"
-            onclick="closeSidebar()"
-        >
-
-            <span class="nav-icon telegram-icon">
-
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     width="22"
-                     height="22"
-                     viewBox="0 0 24 24"
-                     fill="none">
-
-                    <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        fill="currentColor"
-                    />
-
-                    <path
-                        d="M17.7 6.8 6.35 11.18c-.78.31-.77.74-.14.93l2.91.91 1.11 3.46c.13.4.07.56.48.56.32 0 .46-.15.63-.32l1.4-1.36 2.91 2.15c.54.3.93.14 1.07-.5l1.86-8.77c.2-.78-.3-1.13-.88-.94Z"
-                        fill="#061322"
-                    />
-
-                    <path
-                        d="m9.52 12.76 6.15-3.88-4.92 4.68-.19 2.2-1.04-3Z"
-                        fill="currentColor"
-                    />
-
-                </svg>
-
-            </span>
-
-            <span class="nav-text">
-
-                <b data-i18n="supportDeveloper">
-                    Support Developer
-                </b>
-
-                <small data-i18n="supportDeveloperSub">
-                    Direct contact
-                </small>
-
-            </span>
-
-            <span class="nav-arrow">›</span>
-
-        </a>
+        <a href="https://t.me/AlisanX17" target="_blank" class="nav-item" onclick="closeSidebar()"><span class="nav-icon">✦</span><span class="nav-text"><b>@AlisanX17</b><small>ارتباط با سازنده</small></span></a>
 
     </div>
 
@@ -1577,7 +1470,8 @@ input,select,textarea{background:#fff!important;color:#1e293b!important;border-c
 
         <div class="top-actions">
 
-            <button
+            <button class="language-btn" id="themeBtn" onclick="toggleTheme()">مشکی / قرمز</button>
+<button
                 class="language-btn"
                 id="languageBtn"
                 onclick="toggleLanguage()"
@@ -1855,11 +1749,6 @@ const translations = {
         manageUsersSub:"Accounts & configs",
         panelSettings:"Panel Settings",
         panelSettingsSub:"Core & preferences",
-        community:"COMMUNITY",
-        joinTelegram:"Join Telegram",
-        joinTelegramSub:"News & updates",
-        supportDeveloper:"Support Developer",
-        supportDeveloperSub:"Direct contact",
         designedDeveloped:"DESIGNED & DEVELOPED BY",
         logout:"Logout",
         logoutSub:"End this session",
@@ -1890,11 +1779,6 @@ const translations = {
         manageUsersSub:"حساب‌ها و کانفیگ‌ها",
         panelSettings:"تنظیمات پنل",
         panelSettingsSub:"هسته و ترجیحات",
-        community:"ارتباطات",
-        joinTelegram:"عضویت در تلگرام",
-        joinTelegramSub:"اخبار و بروزرسانی",
-        supportDeveloper:"پشتیبانی سازنده",
-        supportDeveloperSub:"ارتباط مستقیم",
         designedDeveloped:"طراحی و توسعه توسط",
         logout:"خروج",
         logoutSub:"پایان این نشست",
@@ -2031,6 +1915,7 @@ function closeSidebar(){
 }
 
 
+function toggleTheme(){const dark=!document.body.classList.contains('theme-dark');document.body.classList.toggle('theme-dark',dark);localStorage.setItem('x7PanelTheme',dark?'dark':'light');const b=document.getElementById('themeBtn');if(b)b.textContent=dark?'آبی / سفید':'مشکی / قرمز'};(function(){const dark=localStorage.getItem('x7PanelTheme')==='dark';document.body.classList.toggle('theme-dark',dark);const b=document.getElementById('themeBtn');if(b)b.textContent=dark?'آبی / سفید':'مشکی / قرمز'})();
 /* START LANGUAGE */
 
 applyLanguage();
