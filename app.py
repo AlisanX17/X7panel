@@ -31,7 +31,7 @@ XRAY_PORT = 10000
 XRAY_API_PORT = 10085
 FLASK_PORT = 5000
 
-DB_PATH = "users.db"
+DB_PATH = os.environ.get("DB_PATH", "users.db")
 XRAY_CONFIG_PATH = "xray_config.json"
 NGINX_CONFIG_PATH = "nginx.conf"
 
