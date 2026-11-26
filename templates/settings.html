@@ -580,56 +580,7 @@ input,select,textarea{background:#fff!important;color:#1e293b!important;border-c
             </div>
         </form>
 
-        <!-- CARD 2: TELEGRAM BOT FORM -->
-        <form id="telegramForm" class="glass-card">
-            <div>
-                <div class="card-header">
-                    <div class="card-title">
-                        <div class="card-title-icon" style="color: #00c8ff; background: rgba(0, 200, 255, 0.08);">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h2>دستیار تلگرام</h2>
-                            <p>اتصال ربات تلگرام برای کاربران و ادمین</p>
-                        </div>
-                    </div>
-                    <span class="badge-status">BOT SERVICE</span>
-                </div>
-
-                <div class="form-group">
-                    <label>توکن ربات تلگرام (Telegram Bot Token)</label>
-                    <div class="input-box">
-                        <input type="text" id="tg_token" value="{{ telegram_token }}" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
-                    </div>
-                    <p class="helper-text">توکن را از ربات رسمی <a href="https://t.me/BotFather" target="_blank">@BotFather</a> در تلگرام بسازید و اینجا قرار دهید.</p>
-                </div>
-
-                <div class="form-group">
-                    <label>شناسه عددی اکانت ادمین (Admin Chat ID)</label>
-                    <div class="input-box">
-                        <input type="text" id="tg_admin_id" value="{{ telegram_admin_id }}" placeholder="مثلاً: 584920184">
-                    </div>
-                    <p class="helper-text">شناسه عددی تلگرام خود را می‌توانید از ربات <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a> دریافت کنید.</p>
-                </div>
-
-                <div style="margin-top: 15px; padding: 12px; background: rgba(0, 234, 255, 0.03); border-radius: 12px; border: 1px dashed rgba(0, 234, 255, 0.15);">
-                    <p style="font-size: 11px; color: var(--text-muted); line-height: 1.6;">
-                        💡 <strong>قابلیت ربات:</strong> کاربران با فرستادن نام یا UUID خود می‌توانند باقی‌مانده حجم و زمان خود را ببینند. شما با چت‌آیدی ادمین، دکمه‌های آمار سرور و فهرست کاربران را خواهید داشت.
-                    </p>
-                </div>
-            </div>
-
-            <div class="card-btn-wrap">
-                <button type="submit" id="saveTelegramBtn" class="btn-save btn-purple">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M17,12L12,17V13H8V11H12V7L17,12Z"/>
-                    </svg>
-                    ذخیره تنظیمات ربات تلگرام
-                </button>
-            </div>
-        </form>
+        <section class="glass-card"><div class="card-header"><div class="card-title"><div class="card-title-icon">🤖</div><div><h2>ربات‌ساز فروش VPN</h2><p>اتصال ربات فروش به کاربران و هسته Xray همین پنل</p></div></div><span class="badge-status">X7 BOT FACTORY</span></div><p class="helper-text" style="margin:14px 0 18px;line-height:1.9">هر ربات شماره کارت، پلن‌ها و مدیر مستقل خودش را دارد.</p><a href="/bots" class="btn-save btn-blue" style="display:flex;align-items:center;justify-content:center;text-decoration:none">ورود به ربات‌ساز و مدیریت ربات‌ها</a></section>
 
     </div>
 
@@ -638,9 +589,7 @@ input,select,textarea{background:#fff!important;color:#1e293b!important;border-c
 <script>
 const messageBox = document.getElementById("messageBox");
 const securityForm = document.getElementById("securityForm");
-const telegramForm = document.getElementById("telegramForm");
 const saveSecurityBtn = document.getElementById("saveSecurityBtn");
-const saveTelegramBtn = document.getElementById("saveTelegramBtn");
 const pwdInput = document.getElementById("password");
 const strengthMeter = document.getElementById("strengthMeter");
 const strengthBar = document.getElementById("strengthBar");
@@ -746,46 +695,6 @@ securityForm.addEventListener("submit", async function(e) {
     }
 });
 
-// FORM 2 SUBMIT: Telegram Bot
-telegramForm.addEventListener("submit", async function(e) {
-    e.preventDefault();
-
-    const tgToken = document.getElementById("tg_token").value.trim();
-    const tgAdminId = document.getElementById("tg_admin_id").value.trim();
-
-    saveTelegramBtn.disabled = true;
-    saveTelegramBtn.innerHTML = '<div class="spinner"></div> در حال ثبت...';
-
-    try {
-        const res = await fetch("/api/settings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                action: "telegram",
-                telegram_token: tgToken,
-                telegram_admin_id: tgAdminId
-            })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || data.status !== "success") {
-            showMessage(data.message || "خطایی در ذخیره تنظیمات ربات تلگرام رخ داد", "error");
-            saveTelegramBtn.disabled = false;
-            saveTelegramBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M17,12L12,17V13H8V11H12V7L17,12Z"/></svg> ذخیره تنظیمات ربات تلگرام';
-            return;
-        }
-
-        showMessage("✓ تنظیمات ربات تلگرام با موفقیت به‌روزرسانی شد.", "success");
-        saveTelegramBtn.disabled = false;
-        saveTelegramBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M17,12L12,17V13H8V11H12V7L17,12Z"/></svg> ذخیره تنظیمات ربات تلگرام';
-
-    } catch (err) {
-        showMessage("خطا در برقراری ارتباط با سرور", "error");
-        saveTelegramBtn.disabled = false;
-        saveTelegramBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M17,12L12,17V13H8V11H12V7L17,12Z"/></svg> ذخیره تنظیمات ربات تلگرام';
-    }
-});
 </script>
 
 </body>
