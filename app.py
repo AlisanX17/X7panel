@@ -10,6 +10,12 @@ import threading
 import socket
 import struct
 import urllib.parse
+import secrets
+import hashlib
+import requests
+import secrets
+import hashlib
+import requests
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, session
 
@@ -57,6 +63,21 @@ def init_db():
         )
     """)
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS bot_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, bot_name TEXT NOT NULL, bot_username TEXT NOT NULL,
+            token_enc TEXT NOT NULL, webhook_secret TEXT NOT NULL UNIQUE, header_secret TEXT NOT NULL,
+            admin_id TEXT NOT NULL, card_number TEXT NOT NULL, plans_json TEXT NOT NULL,
+            enabled INTEGER DEFAULT 1, created_at TEXT
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS bot_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, bot_id INTEGER NOT NULL, telegram_user_id TEXT NOT NULL,
+            plan_volume REAL NOT NULL, plan_days INTEGER NOT NULL, amount INTEGER NOT NULL,
+            status TEXT NOT NULL, receipt_file_id TEXT DEFAULT '', service_username TEXT DEFAULT '', created_at TEXT
+        )
+    """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -867,14 +888,10 @@ def settings():
         return redirect(url_for("login"))
 
     username, _ = get_admin_credentials()
-    tg_token = get_setting("telegram_token", "")
-    tg_admin_id = get_setting("telegram_admin_id", "")
 
     return render_template(
         "settings.html",
-        current_username=username,
-        telegram_token=tg_token,
-        telegram_admin_id=tg_admin_id
+        current_username=username
     )
 
 @app.route("/api/settings", methods=["POST"])
@@ -1192,6 +1209,124 @@ def subscription(user_uuid):
     resp.headers["Subscription-Userinfo"] = get_subscription_header(user_dict)
     return resp
 
+# X7 BOT FACTORY
+def bot_cipher():
+    from cryptography.fernet import Fernet
+    seed=os.environ.get("BOT_TOKEN_ENCRYPTION_KEY") or app.secret_key
+    return Fernet(base64.urlsafe_b64encode(hashlib.sha256(seed.encode()).digest()))
+
+def bot_token(row):
+    return bot_cipher().decrypt(row["token_enc"].encode()).decode()
+
+def bot_api(token,method,payload=None):
+    r=requests.post("https://api.telegram.org/bot"+token+"/"+method,json=payload or {},timeout=15)
+    d=r.json()
+    if not r.ok or not d.get("ok"): raise ValueError(d.get("description","Telegram API error"))
+    return d.get("result")
+
+def bot_send(row,chat,text,markup=None):
+    p={"chat_id":chat,"text":text}
+    if markup: p["reply_markup"]=markup
+    bot_api(bot_token(row),"sendMessage",p)
+
+@app.route("/bots")
+def bots_page():
+    if "admin" not in session: return redirect(url_for("login"))
+    conn=get_db(); rows=conn.execute("SELECT id,bot_name,bot_username,admin_id,enabled FROM bot_configs ORDER BY id DESC").fetchall(); conn.close()
+    return render_template("bots.html",bots=[dict(x) for x in rows])
+
+@app.route("/api/bots",methods=["POST"])
+def api_create_bot():
+    if "admin" not in session: return jsonify({"status":"error","message":"دسترسی غیرمجاز"}),401
+    d=request.get_json(silent=True) or {}; token=d.get("token","").strip(); admin=d.get("admin_id","").strip(); card=d.get("card_number","").strip()
+    if not token or not admin.isdigit() or not card: return jsonify({"status":"error","message":"توکن، شناسه مدیر و شماره کارت الزامی است."}),400
+    plans=[]
+    try:
+        for line in d.get("plans","").splitlines():
+            if line.strip():
+                v,days,price=[x.strip() for x in line.split(",")]
+                item={"volume":float(v),"days":int(days),"price":int(price)}
+                if min(item.values())<=0: raise ValueError()
+                plans.append(item)
+        if not plans: raise ValueError()
+    except Exception: return jsonify({"status":"error","message":"فرمت پلن: حجم,روز,قیمت — نمونه 10,30,50000"}),400
+    try:
+        me=bot_api(token,"getMe",{}); path_secret=secrets.token_urlsafe(32); header=secrets.token_urlsafe(32)
+        base=(os.environ.get("APP_BASE_URL") or request.url_root).rstrip("/")
+        bot_api(token,"setWebhook",{"url":base+"/bot-hook/"+path_secret,"secret_token":header})
+        enc=bot_cipher().encrypt(token.encode()).decode()
+        conn=get_db()
+        conn.execute("INSERT INTO bot_configs (bot_name,bot_username,token_enc,webhook_secret,header_secret,admin_id,card_number,plans_json,enabled,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",(me.get("first_name") or me.get("username"),me.get("username",""),enc,path_secret,header,admin,card,json.dumps(plans),1,datetime.now().isoformat()))
+        conn.commit(); conn.close()
+        return jsonify({"status":"success","message":"ربات @"+me.get("username","")+" متصل شد."})
+    except Exception as e: return jsonify({"status":"error","message":"اتصال ناموفق: "+str(e)[:160]}),400
+
+@app.route("/api/bots/<int:bid>/toggle",methods=["POST"])
+def api_toggle_bot(bid):
+    if "admin" not in session: return jsonify({"status":"error"}),401
+    conn=get_db(); row=conn.execute("SELECT enabled FROM bot_configs WHERE id=?",(bid,)).fetchone()
+    if not row: conn.close(); return jsonify({"status":"error","message":"ربات پیدا نشد"}),404
+    value=0 if row["enabled"] else 1; conn.execute("UPDATE bot_configs SET enabled=? WHERE id=?",(value,bid)); conn.commit(); conn.close()
+    return jsonify({"status":"success"})
+
+@app.route("/api/bots/<int:bid>/delete",methods=["POST"])
+def api_delete_bot(bid):
+    if "admin" not in session: return jsonify({"status":"error"}),401
+    conn=get_db(); row=conn.execute("SELECT * FROM bot_configs WHERE id=?",(bid,)).fetchone()
+    if not row: conn.close(); return jsonify({"status":"error","message":"ربات پیدا نشد"}),404
+    try: bot_api(bot_token(dict(row)),"deleteWebhook",{})
+    except Exception: pass
+    conn.execute("DELETE FROM bot_orders WHERE bot_id=?",(bid,)); conn.execute("DELETE FROM bot_configs WHERE id=?",(bid,)); conn.commit(); conn.close()
+    return jsonify({"status":"success"})
+
+@app.route("/bot-hook/<secret>",methods=["POST"])
+def bot_webhook(secret):
+    conn=get_db(); row=conn.execute("SELECT * FROM bot_configs WHERE webhook_secret=? AND enabled=1",(secret,)).fetchone(); conn.close()
+    if not row: return "not found",404
+    row=dict(row)
+    if request.headers.get("X-Telegram-Bot-Api-Secret-Token")!=row["header_secret"]: return "unauthorized",401
+    token=bot_token(row); update=request.get_json(silent=True) or {}; msg=update.get("message") or {}; cb=update.get("callback_query")
+    try:
+        if cb:
+            bot_api(token,"answerCallbackQuery",{"callback_query_id":cb["id"]})
+            data=cb.get("data",""); actor=str(cb.get("from",{}).get("id",""))
+            if data=="buy":
+                plans=json.loads(row["plans_json"])
+                buttons=[[{"text":str(p["volume"])+"GB / "+str(p["days"])+" روز / "+format(p["price"],",")+" تومان","callback_data":"plan:"+str(i)}] for i,p in enumerate(plans[:25])]
+                bot_send(row,actor,"پلن موردنظر را انتخاب کن:",{"inline_keyboard":buttons})
+            elif data.startswith("plan:"):
+                p=json.loads(row["plans_json"])[int(data.split(":")[1])]
+                conn=get_db(); cur=conn.execute("INSERT INTO bot_orders (bot_id,telegram_user_id,plan_volume,plan_days,amount,status,created_at) VALUES (?,?,?,?,?,?,?)",(row["id"],actor,p["volume"],p["days"],p["price"],"awaiting_receipt",datetime.now().isoformat())); oid=cur.lastrowid; conn.commit(); conn.close()
+                bot_send(row,actor,"سفارش #"+str(oid)+"\nحجم: "+str(p["volume"])+"GB | مدت: "+str(p["days"])+" روز\nمبلغ: "+format(p["price"],",")+" تومان\nشماره کارت:\n"+row["card_number"]+"\nپس از پرداخت تصویر رسید را بفرست.")
+            elif data.startswith("approve:") or data.startswith("reject:"):
+                action,oid=data.split(":")
+                if actor!=row["admin_id"]: return "ok"
+                conn=get_db(); order=conn.execute("SELECT * FROM bot_orders WHERE id=? AND bot_id=? AND status='pending_review'",(int(oid),row["id"])).fetchone(); conn.close()
+                if not order: return "ok"
+                order=dict(order)
+                if action=="reject":
+                    conn=get_db(); conn.execute("UPDATE bot_orders SET status='rejected' WHERE id=?",(int(oid),)); conn.commit(); conn.close()
+                    bot_send(row,order["telegram_user_id"],"پرداخت تأیید نشد."); return "ok"
+                name="x7_"+str(oid)+"_"+str(order["telegram_user_id"])[-5:]; new_uuid=str(uuid.uuid4())
+                conn=get_db(); conn.execute("INSERT INTO users (name,uuid,quota_gb,expire_days,created_at) VALUES (?,?,?,?,?)",(name,new_uuid,order["plan_volume"],order["plan_days"],datetime.now().isoformat())); conn.execute("UPDATE bot_orders SET status='completed',service_username=? WHERE id=?",(name,int(oid))); conn.commit(); conn.close(); restart_xray()
+                base=os.environ.get("APP_BASE_URL") or request.url_root.rstrip("/"); host=urllib.parse.urlparse(base).netloc
+                bot_send(row,order["telegram_user_id"],"پرداخت تأیید شد؛ سرویس ساخته شد.\nنام کاربری: "+name+"\nاشتراک: https://"+host+"/sub/"+new_uuid)
+            return "ok"
+        if msg:
+            chat=str(msg.get("chat",{}).get("id","")); txt=(msg.get("text") or "").strip()
+            if txt=="/start": bot_send(row,chat,"به فروشگاه "+row["bot_name"]+" خوش آمدی.",{"inline_keyboard":[[{"text":"🛒 خرید سرویس","callback_data":"buy"}]]})
+            elif msg.get("photo") or msg.get("document"):
+                conn=get_db(); order=conn.execute("SELECT * FROM bot_orders WHERE bot_id=? AND telegram_user_id=? AND status='awaiting_receipt' ORDER BY id DESC LIMIT 1",(row["id"],chat)).fetchone()
+                if order:
+                    conn.execute("UPDATE bot_orders SET status='pending_review',receipt_file_id=? WHERE id=?",((msg.get("photo") or [msg.get("document")])[-1]["file_id"],order["id"])); conn.commit()
+                    bot_send(row,row["admin_id"],"رسید سفارش #"+str(order["id"])+" مبلغ "+format(order["amount"],",")+" تومان",{"inline_keyboard":[[{"text":"تأیید و ساخت سرویس","callback_data":"approve:"+str(order["id"])},{"text":"رد پرداخت","callback_data":"reject:"+str(order["id"])}]]})
+                    bot_send(row,chat,"رسید برای بررسی مدیر ارسال شد.")
+                else: bot_send(row,chat,"ابتدا از منوی خرید یک پلن انتخاب کن.")
+                conn.close()
+    except Exception as e: print("[X7 bot]",str(e)[:200])
+    return "ok"
+
+
 def run_telegram_bot_thread():
     if not telebot:
         print("[Telegram Bot] telebot module not found. Skipping bot launch.")
@@ -1329,5 +1464,4 @@ if __name__ == "__main__":
     restart_xray()
     start_nginx()
     start_stats_collector()
-    start_telegram_bot()
     app.run(host="127.0.0.1", port=FLASK_PORT)
