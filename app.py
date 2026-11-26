@@ -13,9 +13,6 @@ import urllib.parse
 import secrets
 import hashlib
 import requests
-import secrets
-import hashlib
-import requests
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, session
 
@@ -520,7 +517,7 @@ def make_all_vless_configs(user, host):
     def config_remark(number):
         remark_text = (
             f"کانفیـگ پرسرعـت | "
-            f"𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | "
+            f"𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | "
             f"{number} | "
             f"{name}"
         )
@@ -543,7 +540,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(1)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 1",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 1",
         "desc": "اتصال فوق‌العاده پایدار و بدون قطعی (پیشنهادی)",
         "tag": "HighSpeed 1",
         "config": c1
@@ -564,7 +561,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(2)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 2",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 2",
         "desc": "بهینه‌شده با پینگ بسیار پایین مخصوص بازی و وب‌گردی",
         "tag": "HighSpeed 2",
         "config": c2
@@ -585,7 +582,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(3)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 3",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 3",
         "desc": "فرکانس چندگانه و ضد فیلتر مناسب دانلود‌های سنگین",
         "tag": "HighSpeed 3",
         "config": c3
@@ -606,7 +603,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(4)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 4",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 4",
         "desc": "متد بهینه‌سازی شده‌ی نمونه مخصوص دور زدن فیلترینگ شدید همراه اول",
         "tag": "HighSpeed 4",
         "config": c4
@@ -627,7 +624,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(5)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 5",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 5",
         "desc": "مخصوص ایرانسل با فینگرپرینت متمایز Edge جهت پایداری بالا",
         "tag": "HighSpeed 5",
         "config": c5
@@ -647,7 +644,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(6)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 6",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 6",
         "desc": "مخصوص مخابرات، شاتل، آسیاتک و پارس‌آنلاین با فینگرپرینت Opera",
         "tag": "HighSpeed 6",
         "config": c6
@@ -668,7 +665,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(7)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 7",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 7",
         "desc": "شبیه‌سازی بر بستر آندروید سازگار با رایتل و شاتل‌موبایل",
         "tag": "HighSpeed 7",
         "config": c7
@@ -684,7 +681,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(8)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 8",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 8",
         "desc": "پورت اضطراری ۸۰ بدون رمزنگاری TLS (برای زمان اختلالات شدید گیت‌وی)",
         "tag": "HighSpeed 8",
         "config": c8
@@ -705,7 +702,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(9)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 9",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 9",
         "desc": "دارای فینگرپرینت کاملاً رندوم برای دور زدن فیلترینگ‌های هوشمند",
         "tag": "HighSpeed 9",
         "config": c9
@@ -726,7 +723,7 @@ def make_all_vless_configs(user, host):
         f"#{config_remark(10)}"
     )
     configs.append({
-        "title": "کانفیـگ پرسرعـت | 𝗣𝗔𝗕𝗟𝗢 𝗣𝗔𝗡𝗘𝗟 | 10",
+        "title": "کانفیـگ پرسرعـت | 𝗫𝟳 𝗣𝗔𝗡𝗘𝗟 | 10",
         "desc": "مخصوص دور زدن پکت‌لاسی زیرساخت شبکه با روت بهینه‌سازی شده CDN",
         "tag": "HighSpeed 10",
         "config": c10
@@ -1319,7 +1316,7 @@ def bot_webhook(secret):
                 conn=get_db(); order=conn.execute("SELECT * FROM bot_orders WHERE bot_id=? AND telegram_user_id=? AND status='awaiting_receipt' ORDER BY id DESC LIMIT 1",(row["id"],chat)).fetchone()
                 if order:
                     conn.execute("UPDATE bot_orders SET status='pending_review',receipt_file_id=? WHERE id=?",((msg.get("photo") or [msg.get("document")])[-1]["file_id"],order["id"])); conn.commit()
-                    bot_send(row,row["admin_id"],"رسید سفارش #"+str(order["id"])+" مبلغ "+format(order["amount"],",")+" تومان",{"inline_keyboard":[[{"text":"تأیید و ساخت سرویس","callback_data":"approve:"+str(order["id"])},{"text":"رد پرداخت","callback_data":"reject:"+str(order["id"])}]]})
+                    bot_api(token,"sendPhoto",{"chat_id":row["admin_id"],"photo":(msg.get("photo") or [msg.get("document")])[-1]["file_id"],"caption":"رسید سفارش #"+str(order["id"])+" مبلغ "+format(order["amount"],",")+" تومان","reply_markup":{"inline_keyboard":[[{"text":"تأیید و ساخت سرویس","callback_data":"approve:"+str(order["id"])},{"text":"رد پرداخت","callback_data":"reject:"+str(order["id"])}]]}})
                     bot_send(row,chat,"رسید برای بررسی مدیر ارسال شد.")
                 else: bot_send(row,chat,"ابتدا از منوی خرید یک پلن انتخاب کن.")
                 conn.close()
