@@ -1291,6 +1291,18 @@ def bot_webhook(secret):
                 plans=json.loads(row["plans_json"])
                 buttons=[[{"text":str(p["volume"])+"GB / "+str(p["days"])+" روز / "+format(p["price"],",")+" تومان","callback_data":"plan:"+str(i)}] for i,p in enumerate(plans[:25])]
                 bot_send(row,actor,"پلن موردنظر را انتخاب کن:",{"inline_keyboard":buttons})
+            elif data=="account":
+                conn=get_db()
+                services=conn.execute("SELECT u.* FROM users u JOIN bot_orders o ON o.service_username=u.name WHERE o.bot_id=? AND o.telegram_user_id=? AND o.status='completed' ORDER BY u.id DESC LIMIT 10",(row["id"],actor)).fetchall()
+                conn.close()
+                if not services:
+                    bot_send(row,actor,"هنوز سرویسی برای حساب شما ثبت نشده است.")
+                else:
+                    lines=[]
+                    for u in services:
+                        used=round(u["used_bytes"]/(1024**3),2)
+                        lines.append(u["name"]+" | "+str(used)+"/"+str(u["quota_gb"])+" GB")
+                    bot_send(row,actor,"👤 سرویس‌های شما:\\n"+"\\n".join(lines))
             elif data.startswith("plan:"):
                 p=json.loads(row["plans_json"])[int(data.split(":")[1])]
                 conn=get_db(); cur=conn.execute("INSERT INTO bot_orders (bot_id,telegram_user_id,plan_volume,plan_days,amount,status,created_at) VALUES (?,?,?,?,?,?,?)",(row["id"],actor,p["volume"],p["days"],p["price"],"awaiting_receipt",datetime.now().isoformat())); oid=cur.lastrowid; conn.commit(); conn.close()
@@ -1311,7 +1323,7 @@ def bot_webhook(secret):
             return "ok"
         if msg:
             chat=str(msg.get("chat",{}).get("id","")); txt=(msg.get("text") or "").strip()
-            if txt=="/start": bot_send(row,chat,"به فروشگاه "+row["bot_name"]+" خوش آمدی.",{"inline_keyboard":[[{"text":"🛒 خرید سرویس","callback_data":"buy"}]]})
+            if txt=="/start": bot_send(row,chat,"به فروشگاه "+row["bot_name"]+" خوش آمدی.",{"inline_keyboard":[[{"text":"🛒 خرید سرویس","callback_data":"buy"},{"text":"👤 سرویس‌های من","callback_data":"account"}]]})
             elif msg.get("photo") or msg.get("document"):
                 conn=get_db(); order=conn.execute("SELECT * FROM bot_orders WHERE bot_id=? AND telegram_user_id=? AND status='awaiting_receipt' ORDER BY id DESC LIMIT 1",(row["id"],chat)).fetchone()
                 if order:
