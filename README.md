@@ -1,12 +1,14 @@
 # X7 Panel
 
-VPN service management panel built with Flask, SQLite, Nginx and Xray.
+VPN management panel built with Flask, SQLite, Nginx and Xray.
 
-## Deployment
-Deploy this repository on Railway. Configure `ADMIN_USER`, `ADMIN_PASS` and a strong random `SECRET_KEY` in Railway Variables. Expose the web service on port `8080` (the container reads Railway's `PORT` variable).
+## Railway deployment
+Set ADMIN_USER, ADMIN_PASS, and a long random SECRET_KEY in Railway Variables. Set APP_BASE_URL to the public HTTPS URL of the service for Telegram webhooks. Attach a persistent Railway Volume mounted at /app so SQLite data survives redeployments.
 
-## Project lineage and licensing
-This repository is a community-maintained derivative of the upstream project. The upstream repository did not include a license file when reviewed. This fork preserves attribution; obtain permission or a suitable license from the upstream author before redistributing modified source code.
+## X7 Bot Factory
+The bot builder connects Telegram bots to this panel's own SQLite users table and Xray core. Each bot has its own administrator ID, card number and sales plans. Customers choose a plan, pay by card transfer, and submit a receipt. The configured bot administrator reviews the receipt; only approval creates the VPN user in X7.
 
-## Branding
-X7 Panel uses a clean white and blue interface theme.
+Bot tokens are encrypted at rest using a key derived from SECRET_KEY. Keep this secret stable and private. Never paste bot tokens into public issues or source files.
+
+## Security
+Change the default panel login immediately. Verify transfers independently before approving receipts.
