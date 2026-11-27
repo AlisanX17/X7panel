@@ -83,6 +83,16 @@ def init_db():
         )
     """)
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS config_names (
+            user_id INTEGER NOT NULL,
+            config_number INTEGER NOT NULL,
+            custom_name TEXT NOT NULL,
+            PRIMARY KEY (user_id, config_number),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -730,6 +740,23 @@ def make_all_vless_configs(user, host):
         "config": c10
     })
 
+    # Apply per-user custom remarks without changing connection parameters.
+    try:
+        conn = get_db()
+        rows = conn.execute(
+            "SELECT config_number, custom_name FROM config_names WHERE user_id=?",
+            (user["id"],)
+        ).fetchall()
+        conn.close()
+        custom_names = {int(row["config_number"]): row["custom_name"] for row in rows}
+        for number, custom_name in custom_names.items():
+            if 1 <= number <= len(configs) and custom_name:
+                configs[number - 1]["title"] = custom_name
+                base_uri = configs[number - 1]["config"].split("#", 1)[0]
+                configs[number - 1]["config"] = base_uri + "#" + urllib.parse.quote(custom_name, safe="")
+    except Exception as e:
+        print("Config names load error:", e)
+
     return configs
 
 def make_fake_config(reason, user, host):
@@ -1133,6 +1160,38 @@ def user_config(user_id):
         "sub": sub_link,
         "user": dict(user)
     })
+
+@app.route("/api/config_name/<int:user_id>/<int:config_number>", methods=["POST"])
+def save_config_name(user_id, config_number):
+    if "admin" not in session:
+        return jsonify({"status": "error", "message": "دسترسی غیرمجاز"}), 401
+    if not 1 <= config_number <= 10:
+        return jsonify({"status": "error", "message": "شماره کانفیگ نامعتبر است"}), 400
+
+    data = request.get_json(silent=True) or {}
+    custom_name = str(data.get("name", "")).strip()
+    if len(custom_name) > 80:
+        return jsonify({"status": "error", "message": "نام حداکثر ۸۰ کاراکتر باشد"}), 400
+
+    conn = get_db()
+    user = conn.execute("SELECT id FROM users WHERE id=?", (user_id,)).fetchone()
+    if not user:
+        conn.close()
+        return jsonify({"status": "error", "message": "کاربر یافت نشد"}), 404
+
+    if custom_name:
+        conn.execute(
+            "INSERT OR REPLACE INTO config_names (user_id, config_number, custom_name) VALUES (?, ?, ?)",
+            (user_id, config_number, custom_name)
+        )
+    else:
+        conn.execute(
+            "DELETE FROM config_names WHERE user_id=? AND config_number=?",
+            (user_id, config_number)
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success", "message": "نام کانفیگ ذخیره شد"})
 
 @app.route("/sub/<user_uuid>")
 def subscription(user_uuid):
