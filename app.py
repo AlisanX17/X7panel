@@ -740,22 +740,25 @@ def make_all_vless_configs(user, host):
         "config": c10
     })
 
-    # Apply per-user custom remarks without changing connection parameters.
+    # Apply panel-wide config names to every user and subscription.
     try:
         conn = get_db()
         rows = conn.execute(
-            "SELECT config_number, custom_name FROM config_names WHERE user_id=?",
-            (user["id"],)
+            "SELECT key, value FROM settings WHERE key LIKE 'global_config_name_%'"
         ).fetchall()
         conn.close()
-        custom_names = {int(row["config_number"]): row["custom_name"] for row in rows}
-        for number, custom_name in custom_names.items():
-            if 1 <= number <= len(configs) and custom_name:
+        global_names = {
+            int(row["key"].rsplit("_", 1)[1]): row["value"]
+            for row in rows
+            if row["key"].rsplit("_", 1)[1].isdigit() and row["value"]
+        }
+        for number, custom_name in global_names.items():
+            if 1 <= number <= len(configs):
                 configs[number - 1]["title"] = custom_name
                 base_uri = configs[number - 1]["config"].split("#", 1)[0]
                 configs[number - 1]["config"] = base_uri + "#" + urllib.parse.quote(custom_name, safe="")
     except Exception as e:
-        print("Config names load error:", e)
+        print("Global config names load error:", e)
 
     return configs
 
@@ -1161,37 +1164,47 @@ def user_config(user_id):
         "user": dict(user)
     })
 
-@app.route("/api/config_name/<int:user_id>/<int:config_number>", methods=["POST"])
-def save_config_name(user_id, config_number):
+@app.route("/api/global_config_names", methods=["GET", "POST"])
+def global_config_names():
     if "admin" not in session:
         return jsonify({"status": "error", "message": "دسترسی غیرمجاز"}), 401
-    if not 1 <= config_number <= 10:
-        return jsonify({"status": "error", "message": "شماره کانفیگ نامعتبر است"}), 400
-
-    data = request.get_json(silent=True) or {}
-    custom_name = str(data.get("name", "")).strip()
-    if len(custom_name) > 80:
-        return jsonify({"status": "error", "message": "نام حداکثر ۸۰ کاراکتر باشد"}), 400
 
     conn = get_db()
-    user = conn.execute("SELECT id FROM users WHERE id=?", (user_id,)).fetchone()
-    if not user:
+    if request.method == "GET":
+        rows = conn.execute(
+            "SELECT key, value FROM settings WHERE key LIKE 'global_config_name_%'"
+        ).fetchall()
+        names = {}
+        for row in rows:
+            suffix = row["key"].rsplit("_", 1)[-1]
+            if suffix.isdigit():
+                names[str(int(suffix))] = row["value"]
         conn.close()
-        return jsonify({"status": "error", "message": "کاربر یافت نشد"}), 404
+        return jsonify({"status": "success", "names": names})
 
-    if custom_name:
-        conn.execute(
-            "INSERT OR REPLACE INTO config_names (user_id, config_number, custom_name) VALUES (?, ?, ?)",
-            (user_id, config_number, custom_name)
-        )
-    else:
-        conn.execute(
-            "DELETE FROM config_names WHERE user_id=? AND config_number=?",
-            (user_id, config_number)
-        )
+    data = request.get_json(silent=True) or {}
+    names = data.get("names", {})
+    if not isinstance(names, dict):
+        conn.close()
+        return jsonify({"status": "error", "message": "داده نامعتبر است"}), 400
+
+    for number in range(1, 11):
+        value = str(names.get(str(number), "")).strip()
+        if len(value) > 80:
+            conn.close()
+            return jsonify({"status": "error", "message": f"نام کانفیگ {number} حداکثر ۸۰ کاراکتر باشد"}), 400
+        key = f"global_config_name_{number}"
+        if value:
+            conn.execute(
+                "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+                (key, value)
+            )
+        else:
+            conn.execute("DELETE FROM settings WHERE key=?", (key,))
+
     conn.commit()
     conn.close()
-    return jsonify({"status": "success", "message": "نام کانفیگ ذخیره شد"})
+    return jsonify({"status": "success", "message": "نام‌های سراسری کانفیگ‌ها ذخیره شدند"})
 
 @app.route("/sub/<user_uuid>")
 def subscription(user_uuid):
