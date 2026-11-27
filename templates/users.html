@@ -456,10 +456,13 @@ input,select,textarea{background:#fff!important;color:#1e293b!important;border-c
             </div>
         </div>
 
-        <button class="btn-add" onclick="openAddModal()">
-            <span style="font-size:14px;">+</span>
-            <span data-i18n="createUser">Create User</span>
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-dark" onclick="openGlobalNamesModal()">نام‌گذاری سراسری کانفیگ‌ها</button>
+            <button class="btn-add" onclick="openAddModal()">
+                <span style="font-size:14px;">+</span>
+                <span data-i18n="createUser">Create User</span>
+            </button>
+        </div>
     </section>
 
     <section class="card users-card">
@@ -729,6 +732,22 @@ input,select,textarea{background:#fff!important;color:#1e293b!important;border-c
             <button class="btn btn-dark" style="padding:13px;" onclick="closeModal('confirmModal')" data-i18n="cancel">Cancel</button>
             <button class="btn btn-red" id="confirmBtn" style="padding:13px;" data-i18n="confirm">Confirm</button>
         </div>
+    </div>
+</div>
+
+<!-- GLOBAL CONFIG NAMES MODAL -->
+<div class="overlay" id="globalNamesModal">
+    <div class="modal wide">
+        <div class="modal-head">
+            <div>
+                <h3>نام‌گذاری سراسری کانفیگ‌ها</h3>
+                <div class="modal-sub">هر نام برای تمام کاربران، قدیمی و جدید، اعمال می‌شود.</div>
+            </div>
+            <button class="close" onclick="closeModal('globalNamesModal')">×</button>
+        </div>
+        <div id="globalNamesFields" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+        <p style="color:#7890a8;font-size:9px;line-height:1.8;margin:12px 0;">خالی گذاشتن هر فیلد، نام پیش‌فرض همان کانفیگ را برمی‌گرداند. کاربران قبلی باید اشتراک خود را در برنامه به‌روزرسانی کنند تا نام جدید را دریافت کنند.</p>
+        <button class="btn btn-blue" id="saveGlobalNamesBtn" onclick="saveGlobalNames()" style="width:100%;padding:12px;">ذخیره نام‌ها برای همه کاربران</button>
     </div>
 </div>
 
@@ -1242,7 +1261,6 @@ async function loadUserConfig(id){
                     <div class="config-actions">
                         <button class="btn btn-blue" data-i="${i}" onclick="copyCfg(this)">${currentLanguage === 'fa' ? 'کپی' : 'Copy'}</button>
                         <button class="btn btn-dark" data-i="${i}" onclick="qrCfg(this)">QR</button>
-                        <button class="btn btn-orange" data-i="${i}" onclick="renameCfg(this)">${currentLanguage === 'fa' ? 'تغییر نام' : 'Rename'}</button>
                     </div>
                 </div>`;
             cont.appendChild(box);
@@ -1259,30 +1277,57 @@ function escapeHtml(v){
     return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
-async function renameCfg(btn){
-    const index = Number(btn.dataset.i);
-    const current = currentConfigs[index];
-    const promptText = currentLanguage === 'fa'
-        ? 'نام جدید کانفیگ را وارد کن. برای بازگشت به نام پیش‌فرض، کادر را خالی بگذار:'
-        : 'Enter a new config name. Leave empty to restore the default name:';
-    const value = window.prompt(promptText, current.title);
-    if(value === null) return;
-
+async function openGlobalNamesModal(){
+    const fields = document.getElementById('globalNamesFields');
+    fields.innerHTML = '<div style="color:#7890a8;">در حال دریافت نام‌ها...</div>';
+    openModal('globalNamesModal');
     try{
-        const res = await fetch('/api/config_name/' + currentConfigUserId + '/' + (index + 1), {
+        const res = await fetch('/api/global_config_names');
+        const data = await res.json();
+        if(data.status !== 'success') throw new Error(data.message || 'Load failed');
+        fields.innerHTML = '';
+        for(let i=1;i<=10;i++){
+            const wrap = document.createElement('div');
+            const label = document.createElement('label');
+            label.style.cssText = 'display:block;color:#8ba3ba;font-size:10px;margin-bottom:5px;';
+            label.textContent = 'کانفیگ ' + i;
+            const input = document.createElement('input');
+            input.className = 'input';
+            input.id = 'globalConfigName' + i;
+            input.maxLength = 80;
+            input.placeholder = 'نام پیش‌فرض';
+            input.value = data.names[String(i)] || '';
+            wrap.append(label,input);
+            fields.appendChild(wrap);
+        }
+    } catch(err){
+        fields.innerHTML = '<div style="color:#ff617e;">خطا در دریافت نام‌ها</div>';
+        showToast('خطا در دریافت نام‌ها', 'error');
+    }
+}
+
+async function saveGlobalNames(){
+    const names = {};
+    for(let i=1;i<=10;i++){
+        const input = document.getElementById('globalConfigName' + i);
+        names[String(i)] = input ? input.value.trim() : '';
+    }
+    const btn = document.getElementById('saveGlobalNamesBtn');
+    btn.disabled = true;
+    try{
+        const res = await fetch('/api/global_config_names', {
             method:'POST',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({name:value.trim()})
+            body:JSON.stringify({names})
         });
         const data = await res.json();
-        if(data.status !== 'success'){
-            showToast(data.message || 'Error', 'error');
-            return;
-        }
-        showToast(currentLanguage === 'fa' ? 'نام کانفیگ ذخیره شد ✓' : 'Config name saved ✓', 'success');
-        await loadUserConfig(currentConfigUserId);
+        if(data.status !== 'success') throw new Error(data.message || 'Save failed');
+        showToast('نام‌ها برای همه کاربران ذخیره شدند ✓', 'success');
+        closeModal('globalNamesModal');
     } catch(err){
-        showToast(currentLanguage === 'fa' ? 'خطا در ذخیره نام' : 'Could not save name', 'error');
+        showToast(err.message || 'خطا در ذخیره نام‌ها', 'error');
+    } finally{
+        btn.disabled = false;
     }
 }
 
