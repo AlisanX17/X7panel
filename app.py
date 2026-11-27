@@ -32,6 +32,7 @@ XRAY_API_PORT = 10085
 FLASK_PORT = 5000
 
 DB_PATH = os.environ.get("DB_PATH", "users.db")
+SUBSCRIPTION_BASE_URL = os.environ.get("SUBSCRIPTION_BASE_URL", "").rstrip("/")
 XRAY_CONFIG_PATH = "xray_config.json"
 NGINX_CONFIG_PATH = "nginx.conf"
 
@@ -1123,7 +1124,8 @@ def user_config(user_id):
 
     configs = make_all_vless_configs(dict(user), host)
 
-    sub_link = f"{request.host_url}sub/{user['uuid']}"
+    sub_base = SUBSCRIPTION_BASE_URL or request.host_url.rstrip("/")
+    sub_link = f"{sub_base}/sub/{user['uuid']}"
 
     return jsonify({
         "status": "success",
@@ -1201,7 +1203,7 @@ def subscription(user_uuid):
         percent=round(percent, 1),
         configs=all_configs,
         sub_raw=encoded_sub,
-        sub_url=request.url
+        sub_url=f"{SUBSCRIPTION_BASE_URL or request.host_url.rstrip('/')}/sub/{user_uuid}"
     ))
     resp.headers["Subscription-Userinfo"] = get_subscription_header(user_dict)
     return resp
@@ -1318,8 +1320,8 @@ def bot_webhook(secret):
                     bot_send(row,order["telegram_user_id"],"پرداخت تأیید نشد."); return "ok"
                 name="x7_"+str(oid)+"_"+str(order["telegram_user_id"])[-5:]; new_uuid=str(uuid.uuid4())
                 conn=get_db(); conn.execute("INSERT INTO users (name,uuid,quota_gb,expire_days,created_at) VALUES (?,?,?,?,?)",(name,new_uuid,order["plan_volume"],order["plan_days"],datetime.now().isoformat())); conn.execute("UPDATE bot_orders SET status='completed',service_username=? WHERE id=?",(name,int(oid))); conn.commit(); conn.close(); restart_xray()
-                base=os.environ.get("APP_BASE_URL") or request.url_root.rstrip("/"); host=urllib.parse.urlparse(base).netloc
-                bot_send(row,order["telegram_user_id"],"پرداخت تأیید شد؛ سرویس ساخته شد.\nنام کاربری: "+name+"\nاشتراک: https://"+host+"/sub/"+new_uuid)
+                sub_base=SUBSCRIPTION_BASE_URL or (os.environ.get("APP_BASE_URL") or request.url_root).rstrip("/")
+                bot_send(row,order["telegram_user_id"],"پرداخت تأیید شد؛ سرویس ساخته شد.\nنام کاربری: "+name+"\nاشتراک: "+sub_base+"/sub/"+new_uuid)
             return "ok"
         if msg:
             chat=str(msg.get("chat",{}).get("id","")); txt=(msg.get("text") or "").strip()
