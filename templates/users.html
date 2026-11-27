@@ -768,6 +768,7 @@ input,select,textarea{background:#fff!important;color:#1e293b!important;border-c
 <script>
 let currentConfigs = [];
 let currentSub = '';
+let currentConfigUserId = null;
 let currentFilter = 'all';
 let confirmCallback = null;
 
@@ -1219,6 +1220,7 @@ async function loadUserConfig(id){
 
         currentConfigs = data.configs;
         currentSub = data.sub;
+        currentConfigUserId = id;
 
         document.getElementById('cfgTitle').innerText =
             (currentLanguage === 'fa' ? 'کانفیگ‌های · ' : 'Configurations · ') + data.user.name;
@@ -1240,6 +1242,7 @@ async function loadUserConfig(id){
                     <div class="config-actions">
                         <button class="btn btn-blue" data-i="${i}" onclick="copyCfg(this)">${currentLanguage === 'fa' ? 'کپی' : 'Copy'}</button>
                         <button class="btn btn-dark" data-i="${i}" onclick="qrCfg(this)">QR</button>
+                        <button class="btn btn-orange" data-i="${i}" onclick="renameCfg(this)">${currentLanguage === 'fa' ? 'تغییر نام' : 'Rename'}</button>
                     </div>
                 </div>`;
             cont.appendChild(box);
@@ -1254,6 +1257,33 @@ async function loadUserConfig(id){
 
 function escapeHtml(v){
     return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+async function renameCfg(btn){
+    const index = Number(btn.dataset.i);
+    const current = currentConfigs[index];
+    const promptText = currentLanguage === 'fa'
+        ? 'نام جدید کانفیگ را وارد کن. برای بازگشت به نام پیش‌فرض، کادر را خالی بگذار:'
+        : 'Enter a new config name. Leave empty to restore the default name:';
+    const value = window.prompt(promptText, current.title);
+    if(value === null) return;
+
+    try{
+        const res = await fetch('/api/config_name/' + currentConfigUserId + '/' + (index + 1), {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({name:value.trim()})
+        });
+        const data = await res.json();
+        if(data.status !== 'success'){
+            showToast(data.message || 'Error', 'error');
+            return;
+        }
+        showToast(currentLanguage === 'fa' ? 'نام کانفیگ ذخیره شد ✓' : 'Config name saved ✓', 'success');
+        await loadUserConfig(currentConfigUserId);
+    } catch(err){
+        showToast(currentLanguage === 'fa' ? 'خطا در ذخیره نام' : 'Could not save name', 'error');
+    }
 }
 
 function copyCfg(btn){ copyText(currentConfigs[+btn.dataset.i].config); }
